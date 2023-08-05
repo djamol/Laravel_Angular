@@ -1,0 +1,2 @@
+ng b --configuration=production
+
