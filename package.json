@@ -1,39 +1,21 @@
 {
-  "name": "angular",
-  "version": "0.0.0",
-  "scripts": {
-    "ng": "ng",
-    "start": "ng serve --configuration=dev -o",
-    "build": "ng build --prod && cp ../../../public/assets/angular/index.html ../../views/angular.blade.php",
-    "watch": "ng build --watch --configuration development && cp ../../../public/assets/angular/index.html ../../views/angular.blade.php",
-    "test": "ng test"
-  },
   "private": true,
-  "dependencies": {
-    "@angular/animations": "^15.1.0",
-    "@angular/common": "^15.1.0",
-    "@angular/compiler": "^15.1.0",
-    "@angular/core": "^15.1.0",
-    "@angular/forms": "^15.1.0",
-    "@angular/platform-browser": "^15.1.0",
-    "@angular/platform-browser-dynamic": "^15.1.0",
-    "@angular/router": "^15.1.0",
-    "bootstrap": "^5.2.3",
-    "rxjs": "~7.8.0",
-    "tslib": "^2.3.0",
-    "zone.js": "~0.12.0"
+  "scripts": {
+    "dev": "npm run development",
+    "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "watch-poll": "npm run watch -- --watch-poll",
+    "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "prod": "npm run production",
+    "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^15.1.6",
-    "@angular/cli": "~15.1.6",
-    "@angular/compiler-cli": "^15.1.0",
-    "@types/jasmine": "~4.3.0",
-    "jasmine-core": "~4.5.0",
-    "karma": "~6.4.0",
-    "karma-chrome-launcher": "~3.1.0",
-    "karma-coverage": "~2.2.0",
-    "karma-jasmine": "~5.1.0",
-    "karma-jasmine-html-reporter": "~2.0.0",
-    "typescript": "~4.9.4"
+    "axios": "^0.16.2",
+    "bootstrap-sass": "^3.3.7",
+    "cross-env": "^5.0.1",
+    "jquery": "^3.1.1",
+    "laravel-mix": "^1.0",
+    "lodash": "^4.17.4",
+    "vue": "^2.1.10"
   }
 }

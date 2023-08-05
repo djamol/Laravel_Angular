@@ -14,8 +14,9 @@ use App\Http\Controllers\AngularController;
 |
 */
 
-Route::get('/', function () {
+Route::get('/', 'AngularController@index');
+Route::get('/test', function () {
     return view('welcome');
 });
-Route::any('/{any}', [AngularController::class, 'index'])->where('any', '^(?!api).*$');
+//Route::any('/{any}', [AngularController::class, 'index'])->where('any', '^(?!api).*$');
 
