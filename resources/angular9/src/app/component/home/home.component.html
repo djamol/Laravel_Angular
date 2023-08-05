@@ -7,7 +7,7 @@
                       <input class="form-control" [(ngModel)]="bucket_name" type="text" maxlength="45" [ngModelOptions]="{standalone: true}">
                     </div>
                     <div class="form-group col-md-6">
-                      <label for="bucket_vol">Bucket Volume</label>
+                      <label for="bucket_vol">Bucket Capacity</label>
                       <input class="form-control" [(ngModel)]="bucket_vol" type="number" step="any" [ngModelOptions]="{standalone: true}">
                     </div>
                   </div>
@@ -27,7 +27,7 @@
                       <input class="form-control" [(ngModel)]="ball_name" type="text" maxlength="45" [ngModelOptions]="{standalone: true}">
                     </div>
                     <div class="form-group col-md-6">
-                      <label for="bucket_vol">Ball Volume</label>
+                      <label for="bucket_vol">Ball Size</label>
                       <input class="form-control" [(ngModel)]="ball_vol" type="number" step="any" [ngModelOptions]="{standalone: true}">
                     </div>
                   </div>
@@ -43,10 +43,11 @@
         </div>
 
         <div class="col-md-2">
+            <label> Ball</label>
             <div class="d-flex">
               <div class="form-group">
                     <select class="form-select mb-3" [(ngModel)]="ball_select">
-                        <option *ngFor="let option of options" [value]="option.id">{{ option.name }} Ball</option>
+                        <option *ngFor="let option of options" [value]="option.id">{{ option.name }} Ball  (Size {{ option.volume }})</option>
                       </select>
 
                 </div>
@@ -59,11 +60,11 @@
             </div>
         </div>
 
-
+        <label> Bucket</label>
         <div class="d-flex">
             <div class="form-group">
                   <select class="form-select mb-3" [(ngModel)]="bucket_select">
-                      <option *ngFor="let bucket of buckets_list" [value]="bucket.id">{{ bucket.name }} Bucket</option>
+                      <option *ngFor="let bucket of buckets_list" [value]="bucket.id">{{ bucket.name }} Bucket (Capacity {{ bucket.volume }})</option>
                     </select>
 
               </div>
