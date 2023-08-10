@@ -31,12 +31,32 @@ class BucketController extends Controller
             ];
             $remainingSpace[$bucket->name] = $bucket->volume;
         }
-        $buckets = $buckets->map(function ($bucket) { return (object) $bucket->toArray(); })->toArray();
-        usort($buckets, function ($a, $b) {
-            return $a->volume - $b->volume;
-        });
+
+        $buckets = $buckets->map(fn($bucket) => (object) $bucket->toArray())->toArray();
+        usort($buckets, fn($a, $b) => $a->volume - $b->volume);
 
         $unplacedBalls = [];
+        $totalSum = 0;
+        foreach ($ballQuantities as $size => $quantity) {
+            if (isset($ballSizes[$size])) {
+                $totalSum += $quantity * $ballSizes[$size];
+            }
+        }
+
+        usort($buckets, function ($a, $b) use ($totalSum) {
+            $diffA = abs($a->volume - $totalSum);
+            $diffB = abs($b->volume - $totalSum);
+
+            if ($a->volume >= $totalSum && $b->volume >= $totalSum) {
+                return $diffA - $diffB;
+            } elseif ($a->volume >= $totalSum) {
+                return -1;
+            } elseif ($b->volume >= $totalSum) {
+                return 1;
+            } else {
+                return $diffA - $diffB;
+            }
+        });
 
         foreach ($ballQuantities as $ballName => $quantity) {
             $ballSize = $ballSizes[$ballName];
@@ -103,9 +123,7 @@ class BucketController extends Controller
             }
         }
 
-        $selectedBuckets = array_filter($selectedBuckets, function ($bucket) {
-            return $bucket['filled_volume'] > 0;
-        });
+        $selectedBuckets = array_filter($selectedBuckets, fn($bucket) => $bucket['filled_volume'] > 0);
 
         return response()->json([
             'selected_buckets' => $selectedBuckets,
