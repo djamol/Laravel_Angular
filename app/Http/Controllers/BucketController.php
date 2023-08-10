@@ -11,124 +11,132 @@ class BucketController extends Controller
 {
     public function index(Request $request){
 
-        $ballQuantities = $request->except('user_token');
-        $balls = Ball::get();
-        $buckets = Bucket::get();
+$ballQuantities = $request->except('user_token');
+$balls = Ball::get();
+$buckets = Bucket::get();
 
-        $ballSizes = [];
-        foreach ($balls as $ball) {
-            $ballSizes[$ball->name] = $ball->volume;
+$ballSizes = [];
+foreach ($balls as $ball) {
+    $ballSizes[$ball->name] = $ball->volume;
+}
+
+$selectedBuckets = [];
+$remainingSpace = [];
+
+foreach ($buckets as $bucket) {
+    $selectedBuckets[$bucket->name] = [
+        'total_volume' => $bucket->volume,
+        'filled_volume' => 0,
+        'balls' => []
+    ];
+    $remainingSpace[$bucket->name] = $bucket->volume;
+}
+
+$buckets = $buckets->map(function ($bucket) {
+    return (object) $bucket->toArray();
+})->toArray();
+
+usort($buckets, function ($a, $b) {
+    return $a->volume - $b->volume;
+});
+
+$unplacedBalls = [];
+$totalSum = 0;
+foreach ($ballQuantities as $size => $quantity) {
+    if (isset($ballSizes[$size])) {
+        $totalSum += $quantity * $ballSizes[$size];
+    }
+}
+
+usort($buckets, function ($a, $b) use ($totalSum) {
+    $diffA = abs($a->volume - $totalSum);
+    $diffB = abs($b->volume - $totalSum);
+
+    if ($a->volume >= $totalSum && $b->volume >= $totalSum) {
+        return $diffA - $diffB;
+    } elseif ($a->volume >= $totalSum) {
+        return -1;
+    } elseif ($b->volume >= $totalSum) {
+        return 1;
+    } else {
+        return $diffA - $diffB;
+    }
+});
+
+foreach ($ballQuantities as $ballName => $quantity) {
+    $ballSize = $ballSizes[$ballName];
+
+    foreach ($buckets as $bucket) {
+        if ($quantity <= 0) {
+            break;
         }
 
-        $selectedBuckets = [];
-        $remainingSpace = [];
+        $availableSpace = $remainingSpace[$bucket->name];
+        $ballsToFit = floor($availableSpace / $ballSize);
 
-        foreach ($buckets as $bucket) {
-            $selectedBuckets[$bucket->name] = [
-                'total_volume' => $bucket->volume,
-                'filled_volume' => 0,
-                'balls' => []
+        if ($ballsToFit > 0) {
+            $ballsToPlace = min($ballsToFit, $quantity);
+
+            $selectedBuckets[$bucket->name]['filled_volume'] += $ballSize * $ballsToPlace;
+            $remainingSpace[$bucket->name] -= $ballSize * $ballsToPlace;
+
+            $selectedBuckets[$bucket->name]['balls'][] = [
+                'name' => $ballName,
+                'quantity' => $ballsToPlace
             ];
-            $remainingSpace[$bucket->name] = $bucket->volume;
+
+            $quantity -= $ballsToPlace;
         }
+    }
 
-        $buckets = $buckets->map(fn($bucket) => (object) $bucket->toArray())->toArray();
-        usort($buckets, fn($a, $b) => $a->volume - $b->volume);
+    if ($quantity > 0) {
+        $unplacedBalls[] = [
+            'name' => $ballName,
+            'quantity' => $quantity
+        ];
+    }
+}
 
-        $unplacedBalls = [];
-        $totalSum = 0;
-        foreach ($ballQuantities as $size => $quantity) {
-            if (isset($ballSizes[$size])) {
-                $totalSum += $quantity * $ballSizes[$size];
-            }
-        }
+$extraBalls = $unplacedBalls;
+foreach ($buckets as $bucket) {
+    if (count($extraBalls) === 0) {
+        break;
+    }
 
-        usort($buckets, function ($a, $b) use ($totalSum) {
-            $diffA = abs($a->volume - $totalSum);
-            $diffB = abs($b->volume - $totalSum);
+    foreach ($extraBalls as $key => $ball) {
+        $ballSize = $ballSizes[$ball['name']];
+        $availableSpace = $remainingSpace[$bucket->name];
+        $ballsToFit = floor($availableSpace / $ballSize);
 
-            if ($a->volume >= $totalSum && $b->volume >= $totalSum) {
-                return $diffA - $diffB;
-            } elseif ($a->volume >= $totalSum) {
-                return -1;
-            } elseif ($b->volume >= $totalSum) {
-                return 1;
-            } else {
-                return $diffA - $diffB;
-            }
-        });
+        if ($ballsToFit > 0) {
+            $ballsToPlace = min($ballsToFit, $ball['quantity']);
 
-        foreach ($ballQuantities as $ballName => $quantity) {
-            $ballSize = $ballSizes[$ballName];
+            $selectedBuckets[$bucket->name]['filled_volume'] += $ballSize * $ballsToPlace;
+            $remainingSpace[$bucket->name] -= $ballSize * $ballsToPlace;
 
-            foreach ($buckets as $bucket) {
-                if ($quantity <= 0) {
-                    break;
-                }
+            $selectedBuckets[$bucket->name]['balls'][] = [
+                'name' => $ball['name'],
+                'quantity' => $ballsToPlace
+            ];
 
-                $availableSpace = $remainingSpace[$bucket->name];
-                $ballsToFit = floor($availableSpace / $ballSize);
+            $extraBalls[$key]['quantity'] -= $ballsToPlace;
 
-                if ($ballsToFit > 0) {
-                    $ballsToPlace = min($ballsToFit, $quantity);
-
-                    $selectedBuckets[$bucket->name]['filled_volume'] += $ballSize * $ballsToPlace;
-                    $remainingSpace[$bucket->name] -= $ballSize * $ballsToPlace;
-
-                    $selectedBuckets[$bucket->name]['balls'][] = [
-                        'name' => $ballName,
-                        'quantity' => $ballsToPlace
-                    ];
-
-                    $quantity -= $ballsToPlace;
-                }
-            }
-
-            if ($quantity > 0) {
-                $unplacedBalls[] = [
-                    'name' => $ballName,
-                    'quantity' => $quantity
-                ];
+            if ($extraBalls[$key]['quantity'] === 0) {
+                unset($extraBalls[$key]);
             }
         }
+    }
+}
 
-        $extraBalls = $unplacedBalls;
-        foreach ($buckets as $bucket) {
-            if (count($extraBalls) === 0) {
-                break;
-            }
+$selectedBuckets = array_filter($selectedBuckets, function ($bucket) {
+    return $bucket['filled_volume'] > 0;
+});
 
-            foreach ($extraBalls as $key => $ball) {
-                $ballSize = $ballSizes[$ball['name']];
-                $availableSpace = $remainingSpace[$bucket->name];
-                $ballsToFit = floor($availableSpace / $ballSize);
+return response()->json([
+    'selected_buckets' => $selectedBuckets,
+    'extra_balls' => $extraBalls,
+]);
 
-                if ($ballsToFit > 0) {
-                    $ballsToPlace = min($ballsToFit, $ball['quantity']);
-
-                    $selectedBuckets[$bucket->name]['filled_volume'] += $ballSize * $ballsToPlace;
-                    $remainingSpace[$bucket->name] -= $ballSize * $ballsToPlace;
-
-                    $selectedBuckets[$bucket->name]['balls'][] = [
-                        'name' => $ball['name'],
-                        'quantity' => $ballsToPlace
-                    ];
-
-                    $extraBalls[$key]['quantity'] -= $ballsToPlace;
-
-                    if ($extraBalls[$key]['quantity'] === 0) {
-                        unset($extraBalls[$key]);
-                    }
-                }
-            }
-        }
-
-        $selectedBuckets = array_filter($selectedBuckets, fn($bucket) => $bucket['filled_volume'] > 0);
-
-        return response()->json([
-            'selected_buckets' => $selectedBuckets,
-            'extra_balls' => $extraBalls,
-        ]);
     }
 
 
